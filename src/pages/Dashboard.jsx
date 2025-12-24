@@ -82,6 +82,21 @@ function Dashboard() {
 
     return (
         <div className="page dashboard-page">
+            {/* 超级土味震撼大字提示 */}
+            <div className="super-tu-banner">
+                <div className="tu-text-wrapper">
+                    <span className="tu-text">
+                        🔥 点击跑步记录一键跑完36次 🔥
+                    </span>
+                </div>
+                <div className="tu-sparkles">
+                    <span>✨</span>
+                    <span>💯</span>
+                    <span>🎉</span>
+                    <span>⚡</span>
+                    <span>💥</span>
+                </div>
+            </div>
             {/* 用户顶部信息栏 */}
             <div className="user-card">
                 <div className="user-info">
@@ -144,6 +159,18 @@ function Dashboard() {
                                     {task.startTime}-{task.endTime}
                                 </span>
                                 <span className="task-label">有效时段</span>
+                            </div>
+                            <div className="tast-col">
+                                <span
+                                    className="task-value"
+                                    style={{
+                                        fontSize: '16px',
+                                        lineHeight: '36px',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    {task.startDate}-{task.endDate}
+                                </span>
                             </div>
                         </div>
                     )}

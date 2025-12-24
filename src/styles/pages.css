@@ -147,6 +147,144 @@
    ============================================================ */
 
 /* ============================================================
+   超级土味震撼大字效果
+   ============================================================ */
+
+.super-tu-banner {
+  position: relative;
+  margin: 20px auto 40px;
+  padding: 30px 40px;
+  background: linear-gradient(45deg, #ff0000, #ff6600, #ffcc00, #ff0000);
+  background-size: 400% 400%;
+  animation: tu-rainbow-bg 2s ease infinite;
+  border-radius: 20px;
+  border: 5px solid gold;
+  box-shadow: 
+    0 0 20px #ff0000,
+    0 0 40px #ff6600,
+    0 0 60px #ffcc00,
+    inset 0 0 30px rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  transform: perspective(500px) rotateX(5deg);
+}
+
+.super-tu-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 70%
+  );
+  animation: tu-shine 2s linear infinite;
+}
+
+.tu-text-wrapper {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.tu-text {
+  display: inline-block;
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow:
+    0 0 10px #ff0000,
+    0 0 20px #ff0000,
+    0 0 30px #ff0000,
+    0 0 40px #ff6600,
+    2px 2px 0 #000,
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    4px 4px 0 #ff0000;
+  animation: tu-text-dance 0.5s ease-in-out infinite alternate;
+  letter-spacing: 4px;
+}
+
+.tu-sparkles {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-around;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tu-sparkles span {
+  font-size: 30px;
+  animation: tu-sparkle-bounce 0.8s ease-in-out infinite;
+}
+
+.tu-sparkles span:nth-child(1) { animation-delay: 0s; }
+.tu-sparkles span:nth-child(2) { animation-delay: 0.1s; }
+.tu-sparkles span:nth-child(3) { animation-delay: 0.2s; }
+.tu-sparkles span:nth-child(4) { animation-delay: 0.3s; }
+.tu-sparkles span:nth-child(5) { animation-delay: 0.4s; }
+
+/* 超土味动画 */
+@keyframes tu-rainbow-bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes tu-shine {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+@keyframes tu-text-dance {
+  0% {
+    transform: scale(1) rotate(-2deg);
+    text-shadow:
+      0 0 10px #ff0000,
+      0 0 20px #ff0000,
+      0 0 30px #ff0000,
+      0 0 40px #ff6600,
+      2px 2px 0 #000,
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      4px 4px 0 #ff0000;
+  }
+  100% {
+    transform: scale(1.05) rotate(2deg);
+    text-shadow:
+      0 0 20px #ffff00,
+      0 0 30px #ff6600,
+      0 0 40px #ff0000,
+      0 0 50px #ff0000,
+      2px 2px 0 #000,
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      4px 4px 0 #ffcc00;
+  }
+}
+
+@keyframes tu-sparkle-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.5) rotate(180deg);
+    opacity: 0.8;
+  }
+}
+
+/* ============================================================
    Dashboard
    ============================================================ */
 
@@ -227,7 +365,7 @@
   border: 1px solid var(--color-border);
   text-align: left; /* 卡片内部文字保持左对齐或调整为居中 */
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 24px;
 }
