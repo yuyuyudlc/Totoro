@@ -1,29 +1,30 @@
 /**
  * 仪表盘页面
  */
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getRunTask, submitRun } from '../api';
-import useAuthStore from '../store/useAuthStore';
-import useRunStore from '../store/useRunStore';
+import { submitRun } from '../api';
+import useStore from '../store/store';
 import '../styles/pages.css';
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { isLoggedIn, userInfo, getAuthData, logout } = useAuthStore();
+    const { isLoggedIn, userInfo, getAuthData, logout } = useStore();
     const {
-        task,
-        taskLoading,
-        taskError,
-        setTask,
-        setTaskLoading,
-        setTaskError,
         submitting,
         submitResult,
         setSubmitting,
         setSubmitResult,
         clearSubmitResult
-    } = useRunStore();
+    } = useStore();
+
+    // 自定义参数（可折叠）
+    const [showCustom, setShowCustom] = useState(false);
+    const [km, setKm] = useState('');
+    const [minutes, setMinutes] = useState('');
+
+    const [runDate, setRunDate] = useState('');
+    const [runTime, setRunTime] = useState('');
 
     // 未登录跳转
     useEffect(() => {
@@ -32,38 +33,21 @@ function Dashboard() {
         }
     }, [isLoggedIn, navigate]);
 
-    // 获取任务
-    useEffect(() => {
-        if (!isLoggedIn) return;
-
-        const fetchTask = async () => {
-            setTaskLoading(true);
-            try {
-                const result = await getRunTask(getAuthData());
-                if (result.success) {
-                    setTask(result.data);
-                } else {
-                    setTaskError(result.message);
-                }
-            } catch (error) {
-                setTaskError(error.message);
-            } finally {
-                setTaskLoading(false);
-            }
-        };
-
-        fetchTask();
-    }, [isLoggedIn, getAuthData, setTask, setTaskLoading, setTaskError]);
-
-    // 快速提交
-    const handleQuickSubmit = async () => {
+    // 提交跑步
+    const handleSubmit = async () => {
         if (submitting) return;
 
         setSubmitting(true);
         clearSubmitResult();
 
         try {
-            const result = await submitRun(getAuthData());
+            const options = {};
+            if (km) options.km = parseFloat(km);
+            if (minutes) options.usedTimeMinutes = parseInt(minutes);
+            if (runDate) options.runDate = runDate;
+            if (runTime) options.runTime = runTime + ':00';
+
+            const result = await submitRun(getAuthData(), options);
             setSubmitResult(result);
         } catch (error) {
             setSubmitResult({ success: false, message: error.message });
@@ -82,7 +66,7 @@ function Dashboard() {
 
     return (
         <div className="page dashboard-page">
-            {/* 超级土味震撼大字提示 */}
+            {/* 提示横幅 */}
             <div className="super-tu-banner">
                 <div className="tu-text-wrapper">
                     <span className="tu-text">
@@ -97,7 +81,8 @@ function Dashboard() {
                     <span>💥</span>
                 </div>
             </div>
-            {/* 用户顶部信息栏 */}
+
+            {/* 用户信息栏 */}
             <div className="user-card">
                 <div className="user-info">
                     <h2 className="user-name">{userInfo?.stuName || '用户'}</h2>
@@ -111,80 +96,67 @@ function Dashboard() {
             </div>
 
             <div className="dashboard-main">
-                {/* 任务信息 */}
-                <div className="section">
-                    <h3 className="section-title">本学期任务概览</h3>
-
-                    {taskLoading && (
-                        <div className="loading-card">
-                            <div className="loading-spinner"></div>
-                            <span>加载中...</span>
-                        </div>
-                    )}
-
-                    {taskError && (
-                        <div className="error-card">
-                            <p>{taskError}</p>
-                        </div>
-                    )}
-
-                    {task && !taskLoading && (
-                        <div className="task-card">
-                            <div className="task-col">
-                                <span className="task-value highlight">
-                                    {task.mileage}
-                                </span>
-                                <span className="task-label">目标公里</span>
-                            </div>
-                            <div className="task-col">
-                                <span className="task-value">
-                                    {task.ifHasRun === '1' ? '已完成' : '未跑'}
-                                </span>
-                                <span className="task-label">今日状态</span>
-                            </div>
-                            <div className="task-col">
-                                <span className="task-value">
-                                    {task.minTime}-{task.maxTime}
-                                </span>
-                                <span className="task-label">单次时长(分)</span>
-                            </div>
-                            <div className="task-col">
-                                <span
-                                    className="task-value"
-                                    style={{
-                                        fontSize: '16px',
-                                        lineHeight: '36px'
-                                    }}
-                                >
-                                    {task.startTime}-{task.endTime}
-                                </span>
-                                <span className="task-label">有效时段</span>
-                            </div>
-                            <div className="tast-col">
-                                <span
-                                    className="task-value"
-                                    style={{
-                                        fontSize: '16px',
-                                        lineHeight: '36px',
-                                        textAlign: 'center'
-                                    }}
-                                >
-                                    {task.startDate}-{task.endDate}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
                 {/* 快速提交 */}
                 <div className="section">
-                    <h3 className="section-title">快速提交</h3>
+                    <h3 className="section-title">提交跑步</h3>
+
+                    {/* 自定义参数折叠区域 */}
+                    <button
+                        className="btn btn-text"
+                        onClick={() => setShowCustom(!showCustom)}
+                        style={{ marginBottom: '12px', fontSize: '14px' }}
+                    >
+                        {showCustom ? '▼ 收起自定义参数' : '▶ 自定义参数（可选）'}
+                    </button>
+
+                    {showCustom && (
+                        <div className="custom-params">
+                            <div className="form-group">
+                                <label className="form-label">里程 (公里)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="留空自动生成"
+                                    value={km}
+                                    onChange={(e) => setKm(e.target.value)}
+                                    className="form-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">用时 (分钟)</label>
+                                <input
+                                    type="number"
+                                    placeholder="留空自动生成"
+                                    value={minutes}
+                                    onChange={(e) => setMinutes(e.target.value)}
+                                    className="form-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">跑步日期</label>
+                                <input
+                                    type="date"
+                                    value={runDate}
+                                    onChange={(e) => setRunDate(e.target.value)}
+                                    className="form-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">开始时间</label>
+                                <input
+                                    type="time"
+                                    value={runTime}
+                                    onChange={(e) => setRunTime(e.target.value)}
+                                    className="form-input"
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     <button
-                        className={`btn btn-primary btn-large ${
-                            submitting ? 'loading' : ''
-                        }`}
-                        onClick={handleQuickSubmit}
+                        className={`btn btn-primary btn-large ${submitting ? 'loading' : ''
+                            }`}
+                        onClick={handleSubmit}
                         disabled={submitting}
                     >
                         {submitting ? '提交中...' : '一键提交跑步记录'}
@@ -192,9 +164,8 @@ function Dashboard() {
 
                     {submitResult && (
                         <div
-                            className={`result-card ${
-                                submitResult.success ? 'success' : 'error'
-                            }`}
+                            className={`result-card ${submitResult.success ? 'success' : 'error'
+                                }`}
                         >
                             <p className="result-title">
                                 {submitResult.success ? '提交成功' : '提交失败'}
@@ -205,9 +176,10 @@ function Dashboard() {
                             {submitResult.data && (
                                 <div className="result-data">
                                     <span>里程: {submitResult.data.km} km</span>
-                                    <span>
-                                        用时: {submitResult.data.usedTime}
-                                    </span>
+                                    <span>用时: {submitResult.data.usedTime}</span>
+                                    {submitResult.data.avgSpeed && (
+                                        <span>时速: {submitResult.data.avgSpeed} km/h</span>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -216,9 +188,6 @@ function Dashboard() {
 
                 {/* 导航链接 */}
                 <div className="nav-links">
-                    <Link to="/submit" className="nav-link">
-                        <span>自定义提交</span>
-                    </Link>
                     <Link to="/records" className="nav-link">
                         <span>跑步记录</span>
                     </Link>

@@ -4,15 +4,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getRunRecords, bulkRun } from '../api';
-import useAuthStore from '../store/useAuthStore';
-import useRunStore from '../store/useRunStore';
+import useStore from '../store/store';
 import '../styles/pages.css';
 
 function Records() {
     const navigate = useNavigate();
-    const { isLoggedIn, getAuthData } = useAuthStore();
-    const { records, recordsLoading, setRecords, setRecordsLoading } =
-        useRunStore();
+    const { isLoggedIn, getAuthData } = useStore();
+    const { records, recordsLoading, setRecords, setRecordsLoading } = useStore();
     const [taskInfo, setTaskInfo] = useState(null);
     const [bulkRunning, setBulkRunning] = useState(false);
     const [bulkProgress, setBulkProgress] = useState(null);
@@ -41,7 +39,6 @@ function Records() {
                 });
                 setRecords(uniqueRecords);
                 setTaskInfo(result.task_info);
-                console.log(result.records);
             }
         } catch (error) {
             console.error('获取记录失败:', error);
@@ -87,7 +84,6 @@ function Records() {
                     total: remainingCount,
                     message: result.message
                 });
-                // 刷新记录列表
                 await fetchRecords();
                 alert(`${result.message}\n\n详细结果请查看控制台。`);
                 console.log('批量跑步结果:', result.results);
@@ -132,7 +128,6 @@ function Records() {
                         )}
                     </div>
 
-                    {/* 一键跑完按钮 */}
                     {remainingCount > 0 && !recordsLoading && (
                         <button
                             className="bulk-run-btn"

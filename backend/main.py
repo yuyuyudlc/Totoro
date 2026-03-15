@@ -4,7 +4,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api import login, sunrun
+from routes import login_router, sunrun_router
 
 app = FastAPI(
     title="龙猫阳光跑 API",
@@ -22,8 +22,8 @@ app.add_middleware(
 )
 
 # 注册路由
-app.include_router(login.router, prefix="/api/login", tags=["登录"])
-app.include_router(sunrun.router, prefix="/api/sunrun", tags=["阳光跑"])
+app.include_router(login_router, prefix="/api/login", tags=["登录"])
+app.include_router(sunrun_router, prefix="/api/sunrun", tags=["阳光跑"])
 
 
 @app.get("/")

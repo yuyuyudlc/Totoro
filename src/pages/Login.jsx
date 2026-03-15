@@ -4,15 +4,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getQRCode, pollScanStatus, completeLogin } from '../api';
-import useAuthStore from '../store/useAuthStore';
+import useStore from '../store/store';
 import '../styles/pages.css';
 
 function Login() {
     const navigate = useNavigate();
-    const { isLoggedIn, login } = useAuthStore();
+    const { isLoggedIn, login } = useStore();
 
     const [qrcode, setQrcode] = useState(null);
-    const [status, setStatus] = useState('loading'); // loading, waiting, scanned, success, error
+    const [status, setStatus] = useState('loading');
     const [message, setMessage] = useState('');
     const [polling, setPolling] = useState(false);
 
@@ -40,7 +40,6 @@ function Login() {
         }
     }, []);
 
-    // 初始化获取二维码
     useEffect(() => {
         fetchQRCode();
     }, [fetchQRCode]);
@@ -61,7 +60,6 @@ function Login() {
                     setStatus('loading');
                     setMessage('正在登录...');
 
-                    // 完成登录
                     const loginResult = await completeLogin(result.wx_code);
 
                     if (loginResult.success) {
