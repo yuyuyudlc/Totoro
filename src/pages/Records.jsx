@@ -1,9 +1,9 @@
 /**
  * 跑步记录页面
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getRunRecords, bulkRun } from '../api';
+import { getRunRecords, bulkRun, bulkRunV2 } from '../api';
 import useStore from '../store/store';
 import '../styles/pages.css';
 
@@ -14,6 +14,11 @@ function Records() {
     const [taskInfo, setTaskInfo] = useState(null);
     const [bulkRunning, setBulkRunning] = useState(false);
     const [bulkProgress, setBulkProgress] = useState(null);
+
+    // V2 状态：日期选择模式 + 选中的日期 + 间隔
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [selectedDates, setSelectedDates] = useState(new Set());
+    const [intervalSeconds, setIntervalSeconds] = useState(3);
 
     // 未登录跳转
     useEffect(() => {
@@ -51,6 +56,54 @@ function Records() {
         if (!isLoggedIn) return;
         fetchRecords();
     }, [isLoggedIn]);
+
+    // 计算可用日期（未跑的过去日期）
+    const availableDates = useMemo(() => {
+        if (!taskInfo?.startDate || !taskInfo?.endDate) return [];
+
+        const start = new Date(taskInfo.startDate);
+        const end = new Date(taskInfo.endDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const actualEnd = end < yesterday ? end : yesterday;
+        const runDays = new Set(records.map((r) => r.day));
+
+        const dates = [];
+        const current = new Date(start);
+        while (current <= actualEnd) {
+            const dateStr = current.toISOString().slice(0, 10);
+            if (!runDays.has(dateStr)) {
+                dates.push(dateStr);
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return dates;
+    }, [taskInfo, records]);
+
+    // 全选/取消全选
+    const toggleSelectAll = useCallback(() => {
+        if (selectedDates.size === availableDates.length) {
+            setSelectedDates(new Set());
+        } else {
+            setSelectedDates(new Set(availableDates));
+        }
+    }, [selectedDates, availableDates]);
+
+    // 切换单个日期
+    const toggleDate = useCallback((date) => {
+        setSelectedDates((prev) => {
+            const next = new Set(prev);
+            if (next.has(date)) {
+                next.delete(date);
+            } else {
+                next.add(date);
+            }
+            return next;
+        });
+    }, []);
 
     // 一键跑完36次
     const handleBulkRun = async () => {
@@ -99,6 +152,44 @@ function Records() {
         }
     };
 
+    // V2 批量跑 - 按选定日期（fire-and-forget，不阻塞）
+    const handleBulkRunV2 = () => {
+        const dates = Array.from(selectedDates).sort();
+        if (dates.length === 0) {
+            alert('请至少选择一个日期');
+            return;
+        }
+
+        const estimatedSeconds = dates.length * intervalSeconds;
+
+        if (
+            !confirm(
+                `确定要提交 ${dates.length} 个日期的跑步记录吗？\n\n` +
+                `日期：${dates.join(', ')}\n` +
+                `间隔：每次跑步间隔 ${intervalSeconds} 秒\n` +
+                `预计约 ${estimatedSeconds} 秒完成`
+            )
+        ) {
+            return;
+        }
+
+        // fire and forget
+        bulkRunV2(getAuthData(), dates, intervalSeconds)
+            .then((result) => {
+                console.log('批量跑步V2结果:', result.results || result);
+                fetchRecords();
+            })
+            .catch((error) => {
+                console.error('批量跑步V2失败:', error);
+            });
+
+        setSelectedDates(new Set());
+        alert(
+            `已提交 ${dates.length} 个日期的跑步任务！\n\n` +
+            `预计约 ${estimatedSeconds} 秒完成，请稍后刷新页面或点击返回再进来查看结果。`
+        );
+    };
+
     if (!isLoggedIn) return null;
 
     const remainingCount = 36 - records.length;
@@ -128,30 +219,110 @@ function Records() {
                         )}
                     </div>
 
-                    {remainingCount > 0 && !recordsLoading && (
-                        <button
-                            className="bulk-run-btn"
-                            onClick={handleBulkRun}
-                            disabled={bulkRunning}
-                        >
-                            {bulkRunning ? (
-                                <>
-                                    <span className="btn-spinner"></span>
-                                    {bulkProgress
-                                        ? `${bulkProgress.message}`
-                                        : '提交中...'}
-                                </>
-                            ) : (
-                                `一键跑完 ${remainingCount} 次`
-                            )}
-                        </button>
-                    )}
+                    {/* 按钮组 */}
+                    <div className="bulk-actions">
+                        {remainingCount > 0 && !recordsLoading && (
+                            <button
+                                className="bulk-run-btn"
+                                onClick={handleBulkRun}
+                                disabled={bulkRunning}
+                            >
+                                {bulkRunning ? (
+                                    <>
+                                        <span className="btn-spinner"></span>
+                                        {bulkProgress
+                                            ? `${bulkProgress.message}`
+                                            : '提交中...'}
+                                    </>
+                                ) : (
+                                    `一键跑完 ${remainingCount} 次`
+                                )}
+                            </button>
+                        )}
+
+                        {availableDates.length > 0 && !recordsLoading && (
+                            <button
+                                className="bulk-run-btn bulk-run-btn-v2"
+                                onClick={() => setShowDatePicker(!showDatePicker)}
+                            >
+                                {showDatePicker ? '收起日期选择' : '自选日期批量跑'}
+                            </button>
+                        )}
+                    </div>
 
                     {remainingCount <= 0 && (
                         <div className="completed-badge">
                             已完成本周期所有跑步任务
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* V2 日期选择面板 */}
+            {showDatePicker && (
+                <div className="date-picker-panel">
+                    <div className="date-picker-header">
+                        <h3 className="date-picker-title">
+                            选择要跑的日期（共 {availableDates.length} 个可用）
+                        </h3>
+                        <button
+                            className="btn btn-text"
+                            onClick={toggleSelectAll}
+                        >
+                            {selectedDates.size === availableDates.length ? '取消全选' : '全选'}
+                        </button>
+                    </div>
+
+                    <div className="date-grid">
+                        {availableDates.map((date) => (
+                            <label
+                                key={date}
+                                className={`date-chip ${selectedDates.has(date) ? 'selected' : ''}`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={selectedDates.has(date)}
+                                    onChange={() => toggleDate(date)}
+                                    className="date-chip-input"
+                                />
+                                <span className="date-chip-label">
+                                    {date.slice(5)}
+                                </span>
+                            </label>
+                        ))}
+                        {availableDates.length === 0 && (
+                            <p className="date-picker-empty">没有可用的未跑日期</p>
+                        )}
+                    </div>
+
+                    <div className="date-picker-footer">
+                        <div className="interval-group">
+                            <label className="interval-label">
+                                每次间隔（秒）：
+                            </label>
+                            <input
+                                type="number"
+                                className="interval-input"
+                                value={intervalSeconds}
+                                min={0}
+                                max={300}
+                                onChange={(e) =>
+                                    setIntervalSeconds(parseInt(e.target.value) || 0)
+                                }
+                            />
+                            <span className="interval-hint">
+                                {intervalSeconds === 0 ? '无间隔' : `约 ${(selectedDates.size * intervalSeconds).toFixed(0)} 秒完成`}
+                            </span>
+                        </div>
+
+                        <button
+                            className="bulk-run-btn bulk-run-btn-v2"
+                            onClick={handleBulkRunV2}
+                            disabled={selectedDates.size === 0}
+                        >
+                            {`提交 ${selectedDates.size} 个日期`}
+                        </button>
+                    </div>
                 </div>
             )}
 

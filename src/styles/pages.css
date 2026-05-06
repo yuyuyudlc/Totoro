@@ -654,6 +654,172 @@
   display: inline-block;
 }
 
+/* 批量操作按钮组 */
+.bulk-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bulk-run-btn-v2 {
+  background: #34a853;
+}
+
+.bulk-run-btn-v2:hover:not(:disabled) {
+  background: #2d9249;
+  box-shadow: 0 2px 8px rgba(52, 168, 83, 0.3);
+}
+
+/* ============================================================
+   日期选择面板 (V2)
+   ============================================================ */
+
+.date-picker-panel {
+  margin-top: 24px;
+  padding: 32px;
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.date-picker-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.date-picker-header .btn-text {
+  font-size: 13px;
+  color: var(--color-surface-tint);
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.date-picker-header .btn-text:hover {
+  background: var(--color-neutral-95);
+}
+
+/* 日期网格 */
+.date-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.date-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: var(--color-neutral-95);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.date-chip:hover {
+  border-color: var(--color-surface-tint);
+  background: var(--color-neutral-98);
+}
+
+.date-chip.selected {
+  background: #e8f0fe;
+  border-color: var(--color-surface-tint);
+  color: var(--color-surface-tint);
+}
+
+.date-chip-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.date-chip-label {
+  pointer-events: none;
+}
+
+.date-picker-empty {
+  width: 100%;
+  text-align: center;
+  color: var(--color-text-tertiary);
+  padding: 24px 0;
+  font-size: 14px;
+}
+
+/* 日期选择面板底部 */
+.date-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-divider);
+}
+
+.interval-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.interval-label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.interval-input {
+  width: 72px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+  color: var(--color-text-primary);
+  background: var(--color-neutral-100);
+}
+
+.interval-input:focus {
+  border-color: var(--color-surface-tint);
+  box-shadow: 0 0 0 3px rgba(105, 145, 214, 0.1);
+}
+
+.interval-hint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.date-picker-footer .bulk-run-btn {
+  margin-top: 0;
+}
+
 /* ============================================================
    结果卡片
    ============================================================ */

@@ -127,3 +127,24 @@ export async function bulkRun(authData, count) {
     },
   });
 }
+
+/**
+ * 批量跑步V2 - 指定日期 + 间隔
+ * @param {object} authData - 认证数据
+ * @param {string[]} dates - 日期列表 ["2026-05-01", "2026-05-03", ...]
+ * @param {number} intervalSeconds - 每次跑步间隔秒数
+ */
+export async function bulkRunV2(authData, dates, intervalSeconds = 2) {
+  return request('/sunrun/bulk-v2', {
+    method: 'POST',
+    body: {
+      token: authData.token,
+      stu_number: authData.stuNumber,
+      school_id: authData.schoolId,
+      campus_id: authData.campusId,
+      campus_name: authData.campusName,
+      dates: dates,
+      interval_seconds: intervalSeconds,
+    },
+  });
+}

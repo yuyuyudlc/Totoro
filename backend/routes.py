@@ -2,6 +2,7 @@
 API 路由
 登录路由 + 阳光跑路由
 """
+import asyncio
 import random
 from datetime import datetime, timedelta
 
@@ -16,6 +17,7 @@ from models import (
     SubmitRunResponse,
     BulkRunRequest,
     BulkRunResponse,
+    BulkRunV2Request,
     RunRecordsRequest,
     RunRecordsResponse,
 )
@@ -390,3 +392,180 @@ async def bulk_run(request: BulkRunRequest):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"批量跑步失败: {str(e)}")
+
+
+@sunrun_router.post("/bulk-v2", response_model=BulkRunResponse)
+async def bulk_run_v2(request: BulkRunV2Request):
+    """
+    批量跑步V2 - 指定日期 + 间隔时间
+
+    用户可以手动选择要跑的日期，并设置每次跑步之间的间隔秒数。
+    """
+    if not request.dates:
+        return BulkRunResponse(
+            success=False,
+            message="至少需要选择一个日期",
+            total_submitted=0,
+            results=[]
+        )
+
+    # 去重并排序
+    dates = sorted(list(set(request.dates)))
+    interval = max(0, min(request.interval_seconds, 300))  # 限制间隔 0~300 秒
+
+    try:
+        async with SunRunService(
+            token=request.token,
+            stu_number=request.stu_number,
+            school_id=request.school_id,
+            campus_id=request.campus_id
+        ) as service:
+            # 1. 获取任务信息
+            task = await service.get_sunrun_task()
+            if not task.is_success:
+                return BulkRunResponse(
+                    success=False,
+                    message=f"获取任务失败: {task.message}",
+                    total_submitted=0,
+                    results=[]
+                )
+
+            # 2. 获取已有跑步记录，算出已跑日期
+            records_result = await service.get_sunrun_sport(row_number="200")
+            existing_days = set()
+            if records_result.get("code") == "0":
+                for record in records_result.get("runList", []):
+                    record_day = record.get("day", "")
+                    if record_day and task.start_date <= record_day <= task.end_date:
+                        existing_days.add(record_day)
+
+            # 3. 验证所选日期：必须在任务范围内、不能是未来、不能已跑
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            yesterday = today - timedelta(days=1)
+
+            valid_dates = []
+            skipped_dates = []
+
+            for date_str in dates:
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    skipped_dates.append({"date": date_str, "reason": "日期格式无效"})
+                    continue
+
+                if date_obj > yesterday.date():
+                    skipped_dates.append({"date": date_str, "reason": "不能选择今天或未来的日期"})
+                    continue
+
+                if date_str < task.start_date or date_str > task.end_date:
+                    skipped_dates.append({"date": date_str, "reason": "不在任务日期范围内"})
+                    continue
+
+                if date_str in existing_days:
+                    skipped_dates.append({"date": date_str, "reason": "该日期已有跑步记录"})
+                    continue
+
+                valid_dates.append(date_str)
+
+            if not valid_dates:
+                return BulkRunResponse(
+                    success=False,
+                    message=f"没有有效的日期可跑（{len(skipped_dates)} 个日期被跳过）",
+                    total_submitted=0,
+                    results=[{"date": s["date"], "success": False, "message": s["reason"]} for s in skipped_dates]
+                )
+
+            # 4. 解析时间范围
+            try:
+                start_time_parts = task.start_time.split(":")
+                end_time_parts = task.end_time.split(":")
+                start_hour, start_min = int(start_time_parts[0]), int(start_time_parts[1])
+                end_hour, end_min = int(end_time_parts[0]), int(end_time_parts[1])
+            except Exception:
+                start_hour, start_min = 6, 0
+                end_hour, end_min = 22, 0
+
+            start_minutes = start_hour * 60 + start_min
+            end_minutes = end_hour * 60 + end_min
+            if end_minutes <= start_minutes:
+                end_minutes = start_minutes + 60
+
+            # 5. 逐日提交（带间隔）
+            results = []
+            success_count = 0
+
+            for idx, run_date in enumerate(valid_dates):
+                # 间隔等待（第一次不等待）
+                if idx > 0 and interval > 0:
+                    await asyncio.sleep(interval)
+
+                time_range_minutes = end_minutes - start_minutes - 45
+                if time_range_minutes < 30:
+                    time_range_minutes = 30
+
+                random_minutes = random.randint(start_minutes, start_minutes + time_range_minutes)
+                run_hour = random_minutes // 60
+                run_min = random_minutes % 60
+                run_sec = random.randint(0, 59)
+                run_time = f"{run_hour:02d}:{run_min:02d}:{run_sec:02d}"
+
+                try:
+                    start_result = await service.start_run()
+                    if start_result.get("code") != "0":
+                        results.append({
+                            "date": run_date,
+                            "time": run_time,
+                            "success": False,
+                            "message": f"开始跑步失败: {start_result.get('message', '')}"
+                        })
+                        continue
+
+                    result1, result2, run_info = await service.submit_complete_run(
+                        task=task,
+                        campus_name=request.campus_name,
+                        run_date=run_date,
+                        run_time=run_time
+                    )
+
+                    if result1.get("code") == "0":
+                        success_count += 1
+                        results.append({
+                            "date": run_date,
+                            "time": run_time,
+                            "success": True,
+                            "message": "提交成功",
+                            "km": run_info.get("km"),
+                            "usedTime": run_info.get("usedTime")
+                        })
+                    else:
+                        results.append({
+                            "date": run_date,
+                            "time": run_time,
+                            "success": False,
+                            "message": result1.get("message", "提交失败")
+                        })
+                except Exception as e:
+                    results.append({
+                        "date": run_date,
+                        "time": run_time,
+                        "success": False,
+                        "message": str(e)
+                    })
+
+            # 追加跳过的日期信息
+            for s in skipped_dates:
+                results.append({
+                    "date": s["date"],
+                    "success": False,
+                    "message": s["reason"]
+                })
+
+            total = len(valid_dates) + len(skipped_dates)
+            return BulkRunResponse(
+                success=success_count > 0,
+                message=f"成功提交 {success_count}/{len(valid_dates)} 次跑步记录（{len(skipped_dates)} 个日期被跳过）",
+                total_submitted=success_count,
+                results=results
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"批量跑步V2失败: {str(e)}")

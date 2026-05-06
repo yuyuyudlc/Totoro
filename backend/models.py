@@ -318,6 +318,17 @@ class BulkRunResponse(BaseModel):
     results: List[dict] = []
 
 
+class BulkRunV2Request(BaseModel):
+    """批量跑步V2请求 - 指定日期 + 间隔"""
+    token: str
+    stu_number: str
+    school_id: str
+    campus_id: str
+    campus_name: str
+    dates: List[str]  # 指定要跑的日期列表 ["2026-05-01", "2026-05-03", ...]
+    interval_seconds: int = 2  # 每次跑步之间的间隔（秒）
+
+
 class RunRecordsRequest(BaseModel):
     """获取跑步记录请求"""
     token: str
