@@ -48,19 +48,30 @@ export default function LoginPage() {
   useEffect(() => {
     if (!polling || !qrcode?.uuid) return undefined;
 
-    const pollInterval = setInterval(async () => {
+    let cancelled = false;
+    let timer = null;
+
+    const schedulePoll = () => {
+      timer = window.setTimeout(runPoll, 2000);
+    };
+
+    const runPoll = async () => {
       try {
         const result = await pollScanStatus(qrcode.uuid);
+        if (cancelled) return;
 
         if (result.status === 404) {
           setStatus('scanned');
           setMessage('已扫码，等待手机确认');
+          schedulePoll();
         } else if (result.status === 405 && result.wx_code) {
           setPolling(false);
           setStatus('loading');
           setMessage('正在完成登录');
 
           const loginResult = await completeLogin(result.wx_code);
+          if (cancelled) return;
+
           if (loginResult.success) {
             setStatus('success');
             setMessage('登录成功');
@@ -74,13 +85,22 @@ export default function LoginPage() {
           setPolling(false);
           setStatus('error');
           setMessage(result.message);
+        } else {
+          schedulePoll();
         }
       } catch {
+        if (cancelled) return;
         setStatus('waiting');
+        schedulePoll();
       }
-    }, 2000);
+    };
 
-    return () => clearInterval(pollInterval);
+    runPoll();
+
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
   }, [login, polling, qrcode, router]);
 
   return (
