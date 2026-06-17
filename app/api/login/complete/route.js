@@ -1,4 +1,4 @@
-import { json, readJson, serverError } from '../../../../lib/server/http';
+import { json, readJson } from '../../../../lib/server/http';
 import { LoginService } from '../../../../lib/server/service';
 
 export const runtime = 'nodejs';
@@ -22,6 +22,9 @@ export async function POST(request) {
     delete data.isSuccess;
     return json({ success: true, message: '登录成功', data });
   } catch (error) {
-    return serverError('登录失败', error);
+    console.error('[login] complete failed', {
+      message: error.message,
+    });
+    return json({ success: false, message: `登录失败: ${error.message}`, data: null });
   }
 }
