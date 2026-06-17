@@ -65,19 +65,28 @@ export default function LoginPage() {
           setMessage('已扫码，等待手机确认');
           schedulePoll();
         } else if (result.status === 405 && result.wx_code) {
-          setPolling(false);
           setStatus('loading');
           setMessage('正在完成登录');
 
-          const loginResult = await completeLogin(result.wx_code);
-          if (cancelled) return;
+          let loginResult;
+          try {
+            loginResult = await completeLogin(result.wx_code);
+          } catch (error) {
+            if (cancelled) return;
+            setPolling(false);
+            setStatus('error');
+            setMessage(`登录失败：${error.message}`);
+            return;
+          }
 
           if (loginResult.success) {
+            setPolling(false);
             setStatus('success');
             setMessage('登录成功');
             login(loginResult.data);
             router.replace('/dashboard');
           } else {
+            setPolling(false);
             setStatus('error');
             setMessage(`登录失败：${loginResult.message}`);
           }
