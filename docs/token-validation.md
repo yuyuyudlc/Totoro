@@ -13,16 +13,15 @@
 
 ### 1. API请求拦截
 
-在 `src/api/index.js` 的 `request` 函数中添加了响应拦截逻辑：
+在 `lib/api.js` 的 `request` 函数中添加了响应拦截逻辑：
 
 ```javascript
 // 检测token失效：如果是需要认证的接口且返回success=false
-if (options.requiresAuth !== false && data.success === false) {
-  const { default: useAuthStore } = await import('./store/useAuthStore.js');
-  const { logout, isLoggedIn } = useAuthStore.getState();
+if (options.requiresAuth !== false && data?.success === false) {
+  const { default: useStore } = await import('./store.js');
+  const { logout, isLoggedIn } = useStore.getState();
   
   if (isLoggedIn) {
-    console.warn('[Token失效] 检测到登录已失效，正在退出登录...');
     logout();
     alert('登录已失效，请重新登录');
     window.location.href = '/';
@@ -33,11 +32,10 @@ if (options.requiresAuth !== false && data.success === false) {
 ### 2. 接口分类
 
 - **需要认证的接口**（默认）：所有阳光跑相关接口
-  - `/sunrun/task` - 获取跑步任务
-  - `/sunrun/start` - 开始跑步
   - `/sunrun/submit` - 提交跑步记录
   - `/sunrun/records` - 获取跑步记录
   - `/sunrun/bulk` - 批量跑步
+  - `/sunrun/bulk-v2` - 自选日期批量跑步
 
 - **不需要认证的接口**（添加 `requiresAuth: false` 标记）：
   - `/login/qrcode` - 获取登录二维码
