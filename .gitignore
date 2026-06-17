@@ -22,6 +22,9 @@ build/
 # Vercel
 .vercel/
 
+# Local Codex workspace
+.codex/
+
 # Environment
 .env
 .env*
