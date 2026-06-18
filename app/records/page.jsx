@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CheckSquare, RefreshCcw, Square } from 'lucide-react';
+import RunNoticeDialog from '../../components/RunNoticeDialog';
 import { bulkRun, bulkRunV2, getRunRecords } from '../../lib/api';
 import useStore from '../../lib/store';
 
@@ -27,6 +28,8 @@ export default function RecordsPage() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDates, setSelectedDates] = useState(new Set());
   const [intervalSeconds, setIntervalSeconds] = useState(1);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState(null);
 
   const fetchRecords = useCallback(async () => {
     setRecordsLoading(true);
@@ -128,7 +131,40 @@ export default function RecordsPage() {
     return { successCount, attemptedCount, failures };
   };
 
+  const openBulkNotice = (action) => {
+    setPendingBulkAction(action);
+    setNoticeOpen(true);
+  };
+
+  const closeBulkNotice = () => {
+    setNoticeOpen(false);
+    setPendingBulkAction(null);
+  };
+
+  const continueBulkAction = () => {
+    const action = pendingBulkAction;
+    setNoticeOpen(false);
+    setPendingBulkAction(null);
+
+    if (action === 'bulk') {
+      runBulkRun();
+    } else if (action === 'bulk-v2') {
+      runBulkRunV2();
+    }
+  };
+
   const handleBulkRun = async () => {
+    const remainingCount = Math.max(0, 36 - records.length);
+
+    if (remainingCount <= 0) {
+      window.alert('已完成36次跑步，无需补跑');
+      return;
+    }
+
+    openBulkNotice('bulk');
+  };
+
+  const runBulkRun = async () => {
     const remainingCount = Math.max(0, 36 - records.length);
 
     if (remainingCount <= 0) {
@@ -169,6 +205,15 @@ export default function RecordsPage() {
   };
 
   const handleBulkRunV2 = async () => {
+    if (selectedDates.size === 0) {
+      window.alert('请至少选择一个日期');
+      return;
+    }
+
+    openBulkNotice('bulk-v2');
+  };
+
+  const runBulkRunV2 = async () => {
     const dates = Array.from(selectedDates).sort();
     if (dates.length === 0) {
       window.alert('请至少选择一个日期');
@@ -319,6 +364,13 @@ export default function RecordsPage() {
           </article>
         ))}
       </section>
+
+      <RunNoticeDialog
+        open={noticeOpen}
+        onClose={closeBulkNotice}
+        onConfirm={continueBulkAction}
+        requireProfileClick
+      />
     </main>
   );
 }

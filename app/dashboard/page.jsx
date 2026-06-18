@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, LogOut, ListChecks, Send } from 'lucide-react';
+import RunNoticeDialog from '../../components/RunNoticeDialog';
 import { submitRun } from '../../lib/api';
 import useStore from '../../lib/store';
 
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [minutes, setMinutes] = useState('');
   const [runDate, setRunDate] = useState('');
   const [runTime, setRunTime] = useState('');
+  const [noticeOpen, setNoticeOpen] = useState(false);
 
   useEffect(() => {
     if (hasHydrated && !isLoggedIn) {
@@ -34,7 +36,12 @@ export default function DashboardPage() {
     }
   }, [hasHydrated, isLoggedIn, router]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
+    if (submitting) return;
+    setNoticeOpen(true);
+  };
+
+  const runSubmit = async () => {
     if (submitting) return;
 
     setSubmitting(true);
@@ -172,6 +179,15 @@ export default function DashboardPage() {
         <ListChecks size={22} />
         跑步记录
       </Link>
+
+      <RunNoticeDialog
+        open={noticeOpen}
+        onClose={() => setNoticeOpen(false)}
+        onConfirm={() => {
+          setNoticeOpen(false);
+          runSubmit();
+        }}
+      />
     </main>
   );
 }
