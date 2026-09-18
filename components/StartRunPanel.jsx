@@ -136,6 +136,8 @@ export default function StartRunPanel({ task, route }) {
         <div><dt>用时</dt><dd className="metric-value">{preview.track.usedTime}</dd></div>
         <div><dt>平均配速</dt><dd className="metric-value">{preview.track.avgSpeed}</dd></div>
         <div><dt>步数</dt><dd className="metric-value">{preview.track.steps}</dd></div>
+        {preview.track.fitDegree != null && <div><dt>预估拟合度</dt><dd className="metric-value">{preview.track.fitDegree}</dd></div>}
+        {preview.track.deviceModel && <div className="device-metric"><dt>模拟机型</dt><dd title={preview.track.deviceModel}>{preview.track.deviceModel}</dd></div>}
       </dl>
       <div className="run-preview-actions">
         <button className="action-button secondary" type="button" disabled={busy} onClick={generatePreview}>

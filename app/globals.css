@@ -599,11 +599,10 @@ select {
 .run-preview > div:first-child { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .run-preview strong { font-size: 20px; }
 .preview-state { flex: 0 0 auto; padding: 6px 10px; color: var(--paper-2); background: var(--ink); }
-.run-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; border: 3px solid var(--line); }
-.run-metrics div { min-width: 0; padding: 14px; border-right: 3px solid var(--line); }
-.run-metrics div:last-child { border-right: 0; }
+.run-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin: 0; border: 3px solid var(--line); }
+.run-metrics div { min-width: 0; padding: 14px; border-right: 3px solid var(--line); border-bottom: 3px solid var(--line); }
 .run-metrics dt { color: var(--muted); font-size: 13px; }
-.run-metrics dd { margin: 6px 0 0; overflow-wrap: anywhere; font-size: 18px; font-variant-numeric: tabular-nums; }
+.run-metrics dd { margin: 6px 0 0; overflow-wrap: anywhere; font-size: 16px; font-variant-numeric: tabular-nums; }
 .run-metrics .metric-value { white-space: nowrap; }
 .run-preview-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px; }
 
@@ -785,20 +784,18 @@ select {
     grid-template-columns: 1fr 1fr;
   }
 
-  .run-metrics div,
-  .run-metrics div:last-child {
-    border-right: 0;
+  .run-metrics div {
+    border-right: 3px solid var(--line);
     border-bottom: 3px solid var(--line);
   }
 
-  .run-metrics div:nth-child(odd) {
-    border-right: 3px solid var(--line);
+  .run-metrics div:nth-child(2n) {
+    border-right: 0;
   }
 
-  .run-metrics div:last-child {
+  .run-metrics .device-metric {
     grid-column: 1 / -1;
     border-right: 0;
-    border-bottom: 0;
   }
 
   .run-preview-actions {

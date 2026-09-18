@@ -43,8 +43,12 @@ test('fixture follows the selected route with realistic mini-program fields', ()
   assert.equal(fixture.exercise.scantronId, '');
   assert.deepEqual(fixture.exercise.sunrunPathPointList, route.pointList);
   assert.equal(fixture.detail.cheatCode, '正常跑步');
+  assert.equal(fixture.detail.forceStop, '0');
+  assert.equal(fixture.detail.stopReason, '');
+  assert.equal(fixture.detail.offsiteDistance, 0);
+  assert.match(fixture.exercise.fitDegree, /^(0\.\d{2}|1\.00)$/);
   assert.ok(points.every((point, index) => Number.isFinite(point.timestamp)
-    && /^\d{2}:\d{2}:\d{2}$/.test(point.time)
+    && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(point.time)
     && (!index || point.timestamp > points[index - 1].timestamp)));
   const timestampGaps = points.slice(1).map((point, index) => point.timestamp - points[index].timestamp);
   assert.ok(new Set(timestampGaps).size > 1);
@@ -63,7 +67,7 @@ test('run plan randomizes bounded time and stride while preserving preview metri
   const preview = summarizeRunPlan({ task, route, plan });
   const fixture = buildRunFixture({ task, route, identity }, { plan });
   assert.deepEqual(
-    (({ routeName, km, usedTime, avgSpeed, steps }) => ({ routeName, km, usedTime, avgSpeed, steps }))(fixture.summary),
+    (({ routeName, km, usedTime, avgSpeed, steps, deviceModel, fitDegree }) => ({ routeName, km, usedTime, avgSpeed, steps, deviceModel, fitDegree }))(fixture.summary),
     preview,
   );
 });
@@ -99,6 +103,9 @@ test('start run sends the complete mini-program contract', async () => {
   assert.equal(calls[8].body.scantronId, 'test-session-1');
   assert.equal(calls[9].body.pointList.length, result.track.pointCount);
   assert.equal(calls[9].body.scantronId, 'test-session-1');
+  assert.equal(calls[9].body.forceStop, '0');
+  assert.equal(calls[9].body.stopReason, '');
+  assert.equal(calls[9].body.offsiteDistance, 0);
   assert.deepEqual(result.steps.map(step => step.endpoint), calls.map(call => call.endpoint));
 });
 
@@ -188,14 +195,20 @@ test('a route-less task creates a real session and submits an empty configured r
     '/wxxcx/sunrun/sunRunExercises',
     '/wxxcx/platform/recrecord/sunRunExercisesDetail',
   ]);
-  assert.deepEqual(calls[3].body, {
-    runType: 0, version: 'web-run-1.0', phoneInfo: 'Web&GeneratedRoute&Node.js',
-    paperId: 'paper-1', lineId: '', faceBase64: '', token: 'fixture-token',
-  });
+  assert.equal(calls[3].body.runType, 0);
+  assert.equal(calls[3].body.paperId, 'paper-1');
+  assert.equal(calls[3].body.lineId, '');
+  assert.equal(calls[3].body.faceBase64, '');
+  assert.equal(calls[3].body.token, 'fixture-token');
+  assert.match(calls[3].body.version, /^\d+\.\d+\.\d+$/);
+  assert.ok(calls[3].body.phoneInfo.includes('&') && !calls[3].body.phoneInfo.includes('Node.js'));
   assert.equal(calls[6].body.scantronId, 'route-free-session-1');
   assert.equal(calls[6].body.taskId, 'paper-1');
   assert.deepEqual(calls[6].body.sunrunPathPointList, []);
   assert.equal(calls[7].body.scantronId, 'route-free-session-1');
+  assert.equal(calls[7].body.forceStop, '0');
+  assert.equal(calls[7].body.stopReason, '');
+  assert.equal(calls[7].body.offsiteDistance, 0);
   assert.equal(calls[7].body.pointList.length, result.track.pointCount);
   assert.ok(Math.abs(distanceOfTrack(calls[7].body.pointList) / 1000 - 3.2) < 0.02);
   assert.deepEqual(
