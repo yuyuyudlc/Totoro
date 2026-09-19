@@ -93,6 +93,7 @@ test('student queue listing filters by school and student without exposing paylo
 
 test('confirmed runs enqueue one non-retrying real execution job', async () => {
   const added = [];
+  const events = [];
   const queue = { add: async (...args) => { added.push(args); } };
   const result = await executeConfirmedRun({ task, route, ...identity }, {
     plan,
@@ -101,6 +102,7 @@ test('confirmed runs enqueue one non-retrying real execution job', async () => {
     now: new Date('2026-09-15T10:00:00.000Z'),
     env,
     prepareRunImpl: async () => session,
+    logRunEventImpl: (name, context, details) => events.push({ name, context, details }),
   });
 
   assert.equal(result.mode, 'queued');
@@ -110,6 +112,60 @@ test('confirmed runs enqueue one non-retrying real execution job', async () => {
   assert.equal(added[0][2].delay, 1_200_000);
   assert.equal(added[0][2].attempts, 1);
   assert.equal(added[0][1].payload.session.scantronId, 'test-session-1');
+  assert.deepEqual(events.map(event => event.name), ['run.started', 'run.queued']);
+  assert.ok(events.every(event => event.context.request_id === 'job-2'));
+  assert.equal(events[0].details.stage, 'get_run_begin');
+  assert.equal(events[0].details.scantron_id, 'test-session-1');
+  assert.equal(events[1].details.stage, 'redis_queue');
+  assert.equal(JSON.stringify(events).includes(identity.token), false);
+});
+
+test('confirmed run logs a stage-aware failure without swallowing it', async () => {
+  const events = [];
+  const expected = Object.assign(new Error('begin rejected'), {
+    stage: 'get_run_begin',
+    endpoint: '/wxxcx/sunrun/getRunBegin',
+    kind: 'business_rejected',
+    businessCode: 'LIMIT',
+  });
+  await assert.rejects(executeConfirmedRun({ task, route, ...identity }, {
+    plan,
+    queue: { waitUntilReady: async () => {} },
+    jobId: 'job-failed-before-queue',
+    prepareRunImpl: async () => { throw expected; },
+    logRunEventImpl: (name, context, details) => events.push({ name, context, details }),
+  }), error => error === expected);
+
+  assert.equal(events.length, 1);
+  assert.equal(events[0].name, 'run.failed');
+  assert.equal(events[0].context.request_id, 'job-failed-before-queue');
+  assert.equal(events[0].details.stage, 'get_run_begin');
+  assert.equal(events[0].details.error.kind, 'business_rejected');
+});
+
+test('getRunBegin is logged before a later preparation stage fails', async () => {
+  const events = [];
+  const expected = Object.assign(new Error('points rejected'), {
+    stage: 'run_points',
+    endpoint: '/wxxcx/sunrun/getRunPointList',
+    kind: 'business_rejected',
+  });
+
+  await assert.rejects(executeConfirmedRun({ task, route, ...identity }, {
+    plan,
+    queue: { waitUntilReady: async () => {} },
+    jobId: 'job-points-failed',
+    prepareRunImpl: async (_input, options) => {
+      options.onSessionStarted(session);
+      throw expected;
+    },
+    logRunEventImpl: (name, context, details) => events.push({ name, context, details }),
+  }), error => error === expected);
+
+  assert.deepEqual(events.map(event => event.name), ['run.started', 'run.failed']);
+  assert.equal(events[0].details.scantron_id, session.scantronId);
+  assert.equal(events[1].details.stage, 'run_points');
+  assert.ok(events.every(event => event.context.request_id === 'job-points-failed'));
 });
 
 test('job status is bound to the same student and school', async () => {
@@ -140,6 +196,7 @@ test('worker reads the payload and calls the real runner with the confirmation t
     env,
   });
   const calls = [];
+  const events = [];
   const expected = { mode: 'completed', scantronId: 'test-session-1', track, steps: [] };
   const result = await processDelayedRunJob({
     id: 'job-4', name: 'execute-live-run', data: built.data,
@@ -149,6 +206,7 @@ test('worker reads the payload and calls the real runner with the confirmation t
       calls.push(args);
       return expected;
     },
+    logRunEventImpl: (name, context, details) => events.push({ name, context, details }),
   });
 
   assert.deepEqual(result, expected);
@@ -157,4 +215,37 @@ test('worker reads the payload and calls the real runner with the confirmation t
   assert.deepEqual(calls[0][1], session);
   assert.deepEqual(calls[0][2].plan, plan);
   assert.equal(calls[0][2].preferredBaseUrl, session.preferredBaseUrl);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].name, 'run.completed');
+  assert.equal(events[0].context.request_id, 'job-4');
+  assert.equal(events[0].details.stage, 'worker_complete');
+  assert.equal(events[0].details.scantron_id, 'test-session-1');
+});
+
+test('worker logs upstream failure and preserves the original error', async () => {
+  const built = buildDelayedRunJob({ input: { task, route, ...identity }, plan, session, track }, {
+    jobId: 'job-worker-failed',
+    now: new Date('2026-09-15T10:00:00.000Z'),
+    env,
+  });
+  const events = [];
+  const expected = Object.assign(new Error('exercise rejected'), {
+    stage: 'submit_exercises',
+    endpoint: '/wxxcx/sunrun/sunRunExercises',
+    kind: 'business_rejected',
+  });
+
+  await assert.rejects(processDelayedRunJob({
+    id: 'job-worker-failed', name: 'execute-live-run', data: built.data,
+  }, {
+    env,
+    completeRunImpl: async () => { throw expected; },
+    logRunEventImpl: (name, context, details) => events.push({ name, context, details }),
+  }), error => error === expected);
+
+  assert.equal(events.length, 1);
+  assert.equal(events[0].name, 'run.failed');
+  assert.equal(events[0].context.request_id, 'job-worker-failed');
+  assert.equal(events[0].details.stage, 'submit_exercises');
+  assert.equal(JSON.stringify(events).includes(identity.token), false);
 });

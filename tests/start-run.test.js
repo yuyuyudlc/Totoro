@@ -264,3 +264,59 @@ test('start run switches to the fallback origin for the rest of the workflow', a
     'app.xtotoro.com',
   ]);
 });
+
+test('getRunBegin business rejection exposes safe stage metadata', async () => {
+  const fetchImpl = async url => {
+    const endpoint = new URL(url).pathname;
+    const replies = {
+      '/wxxcx/platform/camera/currentTimeMillis': { status: '00', code: '0', body: Date.now() },
+      '/wxxcx/platform/sunrunFace/selectSunRunStartConfiguration': { status: '00', code: '0', body: { sunrunStartFace: '0', sunrunPointRandom: '0' } },
+      '/wxxcx/platform/camera/getCameraConfig': { status: '00', code: '0', body: { flag: 0 } },
+      '/wxxcx/platform/sunrunFace/selectSunRunRandomConfiguration': { status: '00', code: '0', body: {} },
+      '/wxxcx/platform/sunrunFace/startUpNote': { status: '00', code: '0' },
+      '/wxxcx/sunrun/getRunBegin': { status: '01', code: 'LIMIT', msg: '该任务次数今日已达上限' },
+    };
+    return Response.json(replies[endpoint]);
+  };
+
+  await assert.rejects(
+    prepareRun({ task, route, ...identity }, {
+      baseUrl: 'https://sunrun-test.example.com',
+      fetchImpl,
+      plan: createRunPlan(task),
+    }),
+    error => {
+      assert.equal(error.stage, 'get_run_begin');
+      assert.equal(error.endpoint, '/wxxcx/sunrun/getRunBegin');
+      assert.equal(error.kind, 'business_rejected');
+      assert.equal(error.httpStatus, 200);
+      assert.equal(error.businessStatus, '01');
+      assert.equal(error.businessCode, 'LIMIT');
+      assert.match(error.message, /今日已达上限/);
+      assert.ok(error.elapsedMs >= 0);
+      return true;
+    },
+  );
+});
+
+test('worker submission HTTP failure identifies the exercise stage', async () => {
+  const fetchImpl = async () => new Response('unavailable', { status: 503 });
+  await assert.rejects(
+    completeRun({ task, route, ...identity }, {
+      scantronId: 'session-1',
+      runStartedAt: '2026-09-19T08:00:00.000Z',
+    }, {
+      baseUrl: 'https://sunrun-test.example.com',
+      fetchImpl,
+      plan: createRunPlan(task),
+    }),
+    error => {
+      assert.equal(error.stage, 'submit_exercises');
+      assert.equal(error.endpoint, '/wxxcx/sunrun/sunRunExercises');
+      assert.equal(error.kind, 'upstream_http');
+      assert.equal(error.httpStatus, 503);
+      assert.ok(error.elapsedMs >= 0);
+      return true;
+    },
+  );
+});
