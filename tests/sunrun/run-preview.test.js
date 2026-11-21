@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createRunPreview, verifyRunPreview } from '../lib/server/run-preview.js';
-import { POST as previewPOST } from '../app/api/sunrun/preview/route.js';
-import { POST as startPOST } from '../app/api/sunrun/start/route.js';
-import { POST as runJobPOST } from '../app/api/sunrun/run-job/route.js';
+import { createRunPreview, verifyRunPreview } from '../../lib/server/sunrun/run-preview.js';
+import { POST as previewPOST } from '../../app/api/sunrun/preview/route.js';
+import { POST as startPOST } from '../../app/api/sunrun/start/route.js';
+import { POST as runJobPOST } from '../../app/api/sunrun/run-job/route.js';
+import { POST as tasksPOST } from '../../app/api/sunrun/tasks/route.js';
 
 const identity = { token: 'fixture-token', stuNumber: 'student-1', schoolCode: 'school-1' };
 const task = { taskId: 'paper-1', name: '跑步任务', mileage: '3.20', minTime: '10', maxTime: '25' };
@@ -172,4 +173,27 @@ test('preview route metrics are the metrics queued by confirmed start', { concur
     assert.equal(restoredBody.jobs.length, 1);
     assert.equal(restoredBody.jobs[0].jobId, startBody.result.jobId);
     assert.equal(JSON.stringify(restoredBody.jobs).includes(identity.token), false);
+});
+
+test('run preview pins device model deterministically per student and honors explicit deviceId', () => {
+  const now = new Date('2026-09-15T18:00:00+08:00');
+  const first = createRunPreview({ task, route, identity }, { now });
+  const second = createRunPreview({
+    task, route, identity, overrides: { km: '3.50', usedTime: '18:00' },
+  }, { now });
+  assert.equal(first.track.deviceModel, second.track.deviceModel);
+
+  const explicit = createRunPreview({
+    task, route, identity, deviceId: 'xiaomi-23049rad8c',
+  }, { now });
+  assert.equal(explicit.track.deviceModel, 'Xiaomi 23049RAD8C (Android 14)');
+  const plan = verifyRunPreview(explicit.previewToken, { task, route, identity }, { now });
+  assert.equal(plan.device.phoneInfo, 'Xiaomi&23049RAD8C&Android 14');
+});
+
+test('tasks route returns 400 when required client parameters are missing', async () => {
+  const response = await tasksPOST(request('/api/sunrun/tasks', { token: '' }));
+  assert.equal(response.status, 400);
+  const body = await response.json();
+  assert.equal(body.success, false);
 });

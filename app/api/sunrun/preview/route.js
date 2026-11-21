@@ -1,6 +1,6 @@
-import { json, readJson } from '../../../../lib/server/http.js';
-import { createRunPreview } from '../../../../lib/server/run-preview.js';
-import { assertRunnableSelection } from '../../../../lib/server/run-window.js';
+import { json, readJson } from '../../../../lib/server/core/http.js';
+import { createRunPreview } from '../../../../lib/server/sunrun/run-preview.js';
+import { assertRunnableSelection } from '../../../../lib/server/sunrun/run-window.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -14,6 +14,7 @@ export async function POST(request) {
       task: body.task,
       route: body.route,
       overrides: body.plan,
+      deviceId: body.device_id,
       identity: {
         stuNumber: body.stu_number,
         schoolCode: body.school_code || body.school_id,

@@ -1,7 +1,7 @@
-import { json, readJson } from '../../../../lib/server/http.js';
-import { executeConfirmedRun } from '../../../../lib/server/confirmed-run.js';
-import { verifyRunPreview } from '../../../../lib/server/run-preview.js';
-import { loginWithToken } from '../../../../lib/server/token-login.js';
+import { json, readJson } from '../../../../lib/server/core/http.js';
+import { executeConfirmedRun } from '../../../../lib/server/sunrun/confirmed-run.js';
+import { verifyRunPreview } from '../../../../lib/server/sunrun/run-preview.js';
+import { loginWithToken } from '../../../../lib/server/auth/token-login.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;

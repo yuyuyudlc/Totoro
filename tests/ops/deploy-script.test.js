@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const scriptPath = new URL('../ops/deploy.sh', import.meta.url);
-const sshWrapperPath = new URL('../ops/deploy-ssh.sh', import.meta.url);
+const scriptPath = new URL('../../ops/deploy.sh', import.meta.url);
+const sshWrapperPath = new URL('../../ops/deploy-ssh.sh', import.meta.url);
 
 test('deployment script builds an isolated release and rolls back an unhealthy switch', async () => {
   const script = await readFile(scriptPath, 'utf8');

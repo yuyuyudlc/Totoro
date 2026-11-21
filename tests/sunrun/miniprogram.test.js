@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { makeMiniTasks } from '../lib/server/sunrun-models.js';
-import { SunRunService } from '../lib/server/sunrun-service.js';
+import { makeMiniTasks } from '../../lib/server/sunrun/sunrun-models.js';
+import { SunRunService } from '../../lib/server/sunrun/sunrun-service.js';
 
 const taskPaper = {
   taskId: 'paper-1', name: '秋季任务', startDate: '2026-01-01', endDate: '2026-12-31',

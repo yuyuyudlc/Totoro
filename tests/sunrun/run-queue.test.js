@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { executeConfirmedRun } from '../lib/server/confirmed-run.js';
+import { executeConfirmedRun } from '../../lib/server/sunrun/confirmed-run.js';
 import {
   buildDelayedRunJob,
   getDelayedRunJobStatus,
   getStudentRunJobs,
   processDelayedRunJob,
   validateRedisUrl,
-} from '../lib/server/run-queue.js';
+} from '../../lib/server/sunrun/run-queue.js';
 
 const env = {
   REDIS_URL: 'redis://127.0.0.1:6379',
@@ -91,7 +91,7 @@ test('student queue listing filters by school and student without exposing paylo
   assert.equal(JSON.stringify(jobs).includes(identity.token), false);
 });
 
-test('confirmed runs enqueue one non-retrying real execution job', async () => {
+test('confirmed runs enqueue one retrying real execution job', async () => {
   const added = [];
   const events = [];
   const queue = { add: async (...args) => { added.push(args); } };
@@ -110,7 +110,8 @@ test('confirmed runs enqueue one non-retrying real execution job', async () => {
   assert.equal(added.length, 1);
   assert.equal(added[0][0], 'execute-live-run');
   assert.equal(added[0][2].delay, 1_200_000);
-  assert.equal(added[0][2].attempts, 1);
+  assert.equal(added[0][2].attempts, 3);
+  assert.deepEqual(added[0][2].backoff, { type: 'exponential', delay: 5000 });
   assert.equal(added[0][1].payload.session.scantronId, 'test-session-1');
   assert.deepEqual(events.map(event => event.name), ['run.started', 'run.queued']);
   assert.ok(events.every(event => event.context.request_id === 'job-2'));
@@ -118,6 +119,31 @@ test('confirmed runs enqueue one non-retrying real execution job', async () => {
   assert.equal(events[0].details.scantron_id, 'test-session-1');
   assert.equal(events[1].details.stage, 'redis_queue');
   assert.equal(JSON.stringify(events).includes(identity.token), false);
+});
+
+test('confirmed run rejects duplicate start when student already has an active or delayed job', async () => {
+  const existing = buildDelayedRunJob({ input: { task, route, ...identity }, plan, session, track }, {
+    jobId: 'existing-job', now: new Date(session.runStartedAt), env,
+  });
+  let prepareCalled = false;
+  const queue = {
+    waitUntilReady: async () => {},
+    getJobs: async () => [{ id: 'existing-job', data: existing.data }],
+  };
+
+  await assert.rejects(executeConfirmedRun({ task, route, ...identity }, {
+    plan,
+    queue,
+    now: new Date('2026-09-15T10:00:00.000Z'),
+    env,
+    prepareRunImpl: async () => {
+      prepareCalled = true;
+      return session;
+    },
+    logRunEventImpl: () => {},
+  }), /已有进行中的跑步任务/);
+
+  assert.equal(prepareCalled, false);
 });
 
 test('confirmed run logs a stage-aware failure without swallowing it', async () => {

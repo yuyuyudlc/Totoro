@@ -1,6 +1,6 @@
-import { json, readJson } from '../../../../lib/server/http.js';
-import { getDelayedRunJobStatus, getStudentRunJobs } from '../../../../lib/server/run-queue.js';
-import { loginWithToken } from '../../../../lib/server/token-login.js';
+import { json, readJson } from '../../../../lib/server/core/http.js';
+import { getDelayedRunJobStatus, getStudentRunJobs } from '../../../../lib/server/sunrun/run-queue.js';
+import { loginWithToken } from '../../../../lib/server/auth/token-login.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;

@@ -3,7 +3,7 @@ import Image from 'next/image';
 import AnnouncementContent from '../dialog/post.md';
 import MizukiImage from '../dialog/img/9eb3106ab7b40921628e09b93091db0a1789460279.png';
 import ShutdownNoticeImage from '../dialog/img/shutdown-notice.jpg';
-import AnnouncementDialog from '../components/AnnouncementDialog';
+import AnnouncementDialog from '../components/common/AnnouncementDialog';
 
 function AnnouncementImage({ src, alt = '' }) {
   const image = src === './img/shutdown-notice.jpg' ? ShutdownNoticeImage : MizukiImage;

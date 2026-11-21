@@ -4,7 +4,7 @@ import {
   createRunLogContext,
   logRunEvent,
   runFailureDetails,
-} from '../lib/server/run-events.js';
+} from '../../lib/server/sunrun/run-events.js';
 
 const input = {
   token: 'super-secret-token',

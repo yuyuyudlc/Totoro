@@ -4,9 +4,9 @@ import {
   MorningSignService,
   encryptMorningPayload,
   formatShanghaiDateTime,
-} from '../lib/server/morning-sign.js';
-import { POST as taskPOST } from '../app/api/morning-sign/task/route.js';
-import { POST as submitPOST } from '../app/api/morning-sign/submit/route.js';
+} from '../../lib/server/morning-sign/morning-sign.js';
+import { POST as taskPOST } from '../../app/api/morning-sign/task/route.js';
+import { POST as submitPOST } from '../../app/api/morning-sign/submit/route.js';
 
 const identity = { token: 'fixture-token', stuNumber: 'student-1' };
 const upstreamTask = {

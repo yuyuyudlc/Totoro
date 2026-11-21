@@ -5,9 +5,9 @@ import {
   createRunPlan,
   distanceOfTrack,
   summarizeRunPlan,
-} from '../lib/server/run-data.js';
-import { summarizeMetrics } from '../lib/run-metrics.js';
-import { completeRun, prepareRun, startRun } from '../lib/server/start-run.js';
+} from '../../lib/server/sunrun/run-data.js';
+import { summarizeMetrics } from '../../lib/shared/run-metrics.js';
+import { completeRun, prepareRun, startRun } from '../../lib/server/sunrun/start-run.js';
 
 const task = {
   taskId: 'paper-1', name: '跑步任务', mileage: '3.20', minTime: '10', maxTime: '25', fitDegree: '0.60',

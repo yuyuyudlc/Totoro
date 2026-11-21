@@ -1,5 +1,5 @@
 import nextEnv from '@next/env';
-import { createRunWorker } from '../lib/server/run-queue.js';
+import { createRunWorker } from '../lib/server/sunrun/run-queue.js';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());

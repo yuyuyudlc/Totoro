@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, Download, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { loginWithToken } from '../lib/api';
-import useStore from '../lib/store';
-import MarkdownDialog from './MarkdownDialog';
+import { loginWithToken } from '../../lib/client/api';
+import useStore from '../../lib/client/store';
+import MarkdownDialog from '../common/MarkdownDialog';
 
 export default function LoginScreen({ helpContent }) {
   const router = useRouter();

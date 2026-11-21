@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loginWithToken } from '../lib/server/token-login.js';
-import { POST } from '../app/api/login/token/route.js';
+import { loginWithToken } from '../../lib/server/auth/token-login.js';
+import { POST } from '../../app/api/login/token/route.js';
 
 const profile = { snCode: '00123', schoolCode: 'school', schoolCampusCode: 'campus', studentName: '测试用户' };
 test('Token login uses the mini-program GET protocol and maps required profile fields', async () => {

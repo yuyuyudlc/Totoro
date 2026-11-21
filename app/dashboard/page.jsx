@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, RefreshCcw } from 'lucide-react';
-import { getRunTasks } from '../../lib/api';
-import StartRunPanel from '../../components/StartRunPanel';
-import MorningSignPanel from '../../components/MorningSignPanel';
-import DiscussionComments from '../../components/DiscussionComments';
-import useStore from '../../lib/store';
+import { getRunTasks } from '../../lib/client/api';
+import StartRunPanel from '../../components/sunrun/StartRunPanel';
+import MorningSignPanel from '../../components/morning-sign/MorningSignPanel';
+import DiscussionComments from '../../components/common/DiscussionComments';
+import useStore from '../../lib/client/store';
 
 export default function DashboardPage() {
   const router = useRouter();

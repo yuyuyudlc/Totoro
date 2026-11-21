@@ -8,7 +8,7 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "eslint .",
-    "test": "node --test tests/*.test.js",
+    "test": "node --test \"tests/**/*.test.js\"",
     "start": "next start",
     "worker:run": "node scripts/run-worker.js"
   },

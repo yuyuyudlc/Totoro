@@ -1,8 +1,8 @@
-import { json, readJson } from '../../../../lib/server/http.js';
+import { json, readJson } from '../../../../lib/server/core/http.js';
 import {
   MorningSignError,
   morningSignServiceFromBody,
-} from '../../../../lib/server/morning-sign.js';
+} from '../../../../lib/server/morning-sign/morning-sign.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCcw } from 'lucide-react';
-import { getMorningSignTask, submitMorningSign } from '../lib/api';
-import useStore from '../lib/store';
+import { getMorningSignTask, submitMorningSign } from '../../lib/client/api';
+import useStore from '../../lib/client/store';
 
 export default function MorningSignPanel() {
   const getAuthData = useStore(state => state.getAuthData);

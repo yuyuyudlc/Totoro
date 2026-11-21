@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { assertRouteSelection, assertRunWindow } from '../lib/server/run-window.js';
+import { assertRouteSelection, assertRunWindow } from '../../lib/server/sunrun/run-window.js';
 
 const baseTask = {
   taskId: 'paper-1',
@@ -38,4 +38,18 @@ test('route selection must belong to the task', () => {
   assert.throws(() => assertRouteSelection(baseTask, undefined), /请选择路线/);
   assert.throws(() => assertRouteSelection(baseTask, { pointId: 'line-9' }), /不属于/);
   assert.doesNotThrow(() => assertRouteSelection({ runPointList: [] }, undefined));
+});
+
+test('run window rejects runs whose expected completion crosses outside the slot or end date', () => {
+  assert.doesNotThrow(() => assertRunWindow(baseTask, new Date('2026-09-14T07:35:00+08:00'), { durationSeconds: 1200 }));
+  assert.throws(
+    () => assertRunWindow(baseTask, new Date('2026-09-14T07:50:00+08:00'), { durationSeconds: 1200 }),
+    /预计完成时间 08:10 不在跑步时段/,
+  );
+  const overnight = { ...baseTask, runTimeRuleList: [{ startTime: '22:30', endTime: '01:30' }] };
+  assert.doesNotThrow(() => assertRunWindow(overnight, new Date('2026-09-14T23:45:00+08:00'), { durationSeconds: 1800 }));
+  assert.throws(
+    () => assertRunWindow(overnight, new Date('2026-09-20T23:45:00+08:00'), { durationSeconds: 1800 }),
+    /预计完成日期 2026-09-21/,
+  );
 });

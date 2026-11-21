@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const workflowPath = new URL('../.github/workflows/deploy.yml', import.meta.url);
+const workflowPath = new URL('../../.github/workflows/deploy.yml', import.meta.url);
 
 test('production workflow deploys main through pinned SSH credentials', async () => {
   const workflow = await readFile(workflowPath, 'utf8');

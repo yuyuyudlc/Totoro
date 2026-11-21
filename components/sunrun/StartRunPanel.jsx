@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getCurrentRunJobs, getRunJobStatus, previewRun, startRun } from '../lib/api';
-import { parseUsedTime, sanitizeMileageInput, summarizeMetrics } from '../lib/run-metrics';
-import useStore from '../lib/store';
+import { getCurrentRunJobs, getRunJobStatus, previewRun, startRun } from '../../lib/client/api';
+import { REAL_DEVICE_PROFILES, formatDeviceProfile } from '../../lib/shared/device-profiles';
+import { parseUsedTime, sanitizeMileageInput, summarizeMetrics } from '../../lib/shared/run-metrics';
+import useStore from '../../lib/client/store';
 
 export default function StartRunPanel({ task }) {
   const getAuthData = useStore(state => state.getAuthData);
+  const deviceId = useStore(state => state.deviceId);
+  const setDeviceId = useStore(state => state.setDeviceId);
   const pending = useRef(false);
   const [pointId, setPointId] = useState('');
   const [operation, setOperation] = useState('');
@@ -103,7 +106,7 @@ export default function StartRunPanel({ task }) {
     setError('');
     setResult(null);
     try {
-      const data = await previewRun(getAuthData(), task, route, overrides);
+      const data = await previewRun(getAuthData(), task, route, overrides, deviceId);
       applyPreview(data.preview);
     } catch (caught) {
       setError(caught.message);
@@ -128,6 +131,14 @@ export default function StartRunPanel({ task }) {
 
   function selectRoute(event) {
     setPointId(event.target.value);
+    setPreview(null);
+    setResult(null);
+    setError('');
+    setApplied(null);
+  }
+
+  function selectDevice(event) {
+    setDeviceId(event.target.value);
     setPreview(null);
     setResult(null);
     setError('');
@@ -176,6 +187,16 @@ export default function StartRunPanel({ task }) {
       <span>跑步路线</span>
       <select value={route?.pointId || ''} onChange={selectRoute}>
         {routes.map(point => <option key={point.pointId} value={point.pointId}>{point.pointName}</option>)}
+      </select>
+    </label>}
+    {task && <label className="route-select">
+      <span>模拟机型</span>
+      <select value={deviceId} onChange={selectDevice} disabled={busy}>
+        <option value="">默认（按账号固定）</option>
+        {REAL_DEVICE_PROFILES.map(profile => {
+          const formatted = formatDeviceProfile(profile);
+          return <option key={profile.id} value={profile.id}>{formatted.deviceModel}</option>;
+        })}
       </select>
     </label>}
     {task && routes.length === 0 && <p className="limit-note" role="status">

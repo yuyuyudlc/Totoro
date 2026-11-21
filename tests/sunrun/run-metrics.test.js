@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { sanitizeMileageInput, summarizeMetrics } from '../lib/run-metrics.js';
+import { sanitizeMileageInput, summarizeMetrics } from '../../lib/shared/run-metrics.js';
 
 test('mileage input keeps at most two decimals', () => {
   assert.equal(sanitizeMileageInput('3.456'), '3.45');

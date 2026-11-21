@@ -1,5 +1,5 @@
-import { json, readJson } from '../../../../lib/server/http.js';
-import { loginWithToken, TokenLoginError } from '../../../../lib/server/token-login.js';
+import { json, readJson } from '../../../../lib/server/core/http.js';
+import { loginWithToken, TokenLoginError } from '../../../../lib/server/auth/token-login.js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
