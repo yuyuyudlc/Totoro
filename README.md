@@ -1,6 +1,6 @@
 # Totoro Sunrun
 
-Next.js 全栈练习项目，使用 App Router 承载前端页面和 `/api` 服务端接口，可直接部署到 Vercel。
+基于 Next.js App Router 的阳光跑与早操打卡网页。
 
 ## 许可证
 
@@ -34,32 +34,6 @@ pnpm dev
 pnpm lint
 pnpm test
 pnpm build
-```
-
-## 部署
-
-Vercel 使用默认 npm 流程即可：
-
-- Install Command: `npm install`
-- Build Command: `npm run build`
-- Output: Next.js 默认输出
-
-### 腾讯云生产环境
-
-推送到 `main` 后，[GitHub Actions 工作流](.github/workflows/deploy.yml) 会通过专用 SSH 密钥发布到腾讯云；也可以在 GitHub 的 Actions 页面手动运行。生产环境需要配置以下 Actions secrets：
-
-- `DEPLOY_HOST`：服务器地址
-- `DEPLOY_USER`：部署用户
-- `DEPLOY_SSH_KEY`：专用 Ed25519 私钥
-- `DEPLOY_KNOWN_HOSTS`：经过人工核验的服务器 SSH 公钥记录
-
-服务端的 [`ops/deploy.sh`](ops/deploy.sh) 会串行执行部署，在独立 Git worktree 中安装依赖和构建。构建成功后才原子切换 `/opt/totoro-runtime/current` 并重启服务；健康检查失败时自动恢复上一个版本，服务器保留最近三个版本。
-
-查看生产日志：
-
-```bash
-sudo journalctl -u totoro -f
-sudo tail -f /var/log/nginx/error.log
 ```
 
 ## 当前功能与平台限制
@@ -111,8 +85,6 @@ Worker 执行正式请求需要完整请求资料，因此 Token、任务、路�
 pnpm dev
 pnpm worker:run
 ```
-
-生产服务器使用 `totoro.service` 运行网页，使用 `ops/totoro-worker.service` 运行延迟任务 Worker。两者都连接仅监听本机的 Redis；部署脚本切换版本、失败回滚时会同时重启两个服务。
 
 整段正式接口流程不是幂等操作，因此每个 BullMQ 任务只执行一次，不对整个流程自动重试。成功结果保留一小时，失败结果保留一天；前端通过任务状态接口轮询并展示最终场次编号。
 
