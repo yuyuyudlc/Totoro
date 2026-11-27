@@ -8,4 +8,4 @@
 
 最后的最后，请关注17岁喜欢鲨鱼的女高中生—— [七海Nana7mi](https://space.bilibili.com/434334701)！
 
-![七海Nana7mi](.\img\nana7mi-7th.png)
+![七海Nana7mi](./img/nana7mi-7th.png)
